@@ -1,0 +1,33 @@
+name: lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  shellcheck:
+    name: shellcheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Syntax check
+        run: bash -n brevo-keepalive.sh
+
+      - name: ShellCheck
+        run: shellcheck brevo-keepalive.sh
+
+      - name: Dry run
+        env:
+          BREVO_SMTP_LOGIN: ci@example.com
+          BREVO_SMTP_KEY: xsmtpsib-not-a-real-key
+          MAIL_FROM: ci@example.com
+          MAIL_TO: ci@example.com
+        run: ./brevo-keepalive.sh --dry-run
