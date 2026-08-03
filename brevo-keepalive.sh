@@ -174,10 +174,14 @@ for key in "${keys[@]}"; do
   build_message "$index" "${#keys[@]}" "$(mask "$key")"
 
   # The credentials are handed to curl on stdin instead of argv, so they never
-  # show up in the process list of a shared machine.
+  # show up in the process list of a shared machine. AUTH is pinned to PLAIN
+  # because that is what ordinary SMTP clients use; left to itself curl picks
+  # CRAM-MD5, which is a rarely exercised path on the relay. ssl-reqd above
+  # guarantees the session is already encrypted.
   if curl --config - <<EOF
 url = "$(escape_conf "$url")"
 ssl-reqd
+login-options = "AUTH=PLAIN"
 user = "$(escape_conf "$login"):$(escape_conf "$key")"
 mail-from = "$(escape_conf "$MAIL_FROM")"
 mail-rcpt = "$(escape_conf "$MAIL_TO")"
