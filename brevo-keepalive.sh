@@ -83,6 +83,31 @@ escape_conf() {
   printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g'
 }
 
+# Build a fresh message for one key. Every send gets its own Message-ID and a
+# numbered subject: mail systems collapse messages that share a Message-ID, so
+# reusing one would make all but the first copy vanish from the inbox.
+build_message() {
+  local index="$1" total="$2" key_hint="$3"
+  cat >"$message" <<EOF
+From: $MAIL_FROM
+To: $MAIL_TO
+Subject: $subject ($index/$total)
+Date: $(LC_ALL=C date "+%a, %d %b %Y %H:%M:%S %z")
+Message-ID: <$(date +%s).$$.$index.$RANDOM@${MAIL_FROM##*@}>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Auto-Submitted: auto-generated
+X-Auto-Response-Suppress: All
+
+Automated keep-alive message for SMTP key $index of $total ($key_hint).
+
+Brevo deletes SMTP keys that stay unused for 90 days. This message was sent
+only to mark the key as active. No action is required.
+
+Sent by brevo-keepalive.sh at $(LC_ALL=C date -u "+%Y-%m-%dT%H:%M:%SZ").
+EOF
+}
+
 while (($# > 0)); do
   case "$1" in
   -n | --dry-run) dry_run=1 ;;
@@ -128,25 +153,6 @@ umask 077
 message="$(mktemp "${TMPDIR:-/tmp}/brevo-keepalive.XXXXXX")"
 trap 'rm -f "$message"' EXIT
 
-cat >"$message" <<EOF
-From: $MAIL_FROM
-To: $MAIL_TO
-Subject: $subject
-Date: $(LC_ALL=C date "+%a, %d %b %Y %H:%M:%S %z")
-Message-ID: <$(date +%s).$$@${MAIL_FROM##*@}>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Auto-Submitted: auto-generated
-X-Auto-Response-Suppress: All
-
-Automated keep-alive message.
-
-Brevo deletes SMTP keys that stay unused for 90 days. This message was sent
-only to mark the key as active. No action is required.
-
-Sent by brevo-keepalive.sh at $(LC_ALL=C date -u "+%Y-%m-%dT%H:%M:%SZ").
-EOF
-
 printf 'relay:  %s\n' "$url"
 printf 'login:  %s\n' "$login"
 printf 'from:   %s\n' "$MAIL_FROM"
@@ -154,14 +160,18 @@ printf 'to:     %s\n' "$MAIL_TO"
 printf 'keys:   %d\n' "${#keys[@]}"
 
 if ((dry_run)); then
+  build_message 1 "${#keys[@]}" "$(mask "${keys[0]}")"
   printf '\n--- message (dry run, nothing sent) ---\n'
   cat "$message"
   exit 0
 fi
 
 failed=0
+index=0
 for key in "${keys[@]}"; do
+  index=$((index + 1))
   printf '\nsending with key %s ... ' "$(mask "$key")"
+  build_message "$index" "${#keys[@]}" "$(mask "$key")"
 
   # The credentials are handed to curl on stdin instead of argv, so they never
   # show up in the process list of a shared machine.
