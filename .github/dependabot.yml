@@ -1,0 +1,16 @@
+# The only third-party code here is the GitHub Actions used by the workflows.
+# Dependabot keeps their SHA pins current.
+version: 2
+
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:00"
+      timezone: UTC
+    labels:
+      - dependencies
+    commit-message:
+      prefix: ci
