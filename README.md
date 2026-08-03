@@ -77,25 +77,17 @@ failed.
 
 Monthly is plenty for a 90-day window and leaves room for two missed runs.
 
-### GitHub Actions
-
-[`.github/workflows/keepalive.yml`](.github/workflows/keepalive.yml) runs on the
-1st of each month and on demand from the Actions tab. Add four repository
-secrets under **Settings → Secrets and variables → Actions**:
-`BREVO_SMTP_LOGIN`, `BREVO_SMTP_KEY`, `MAIL_FROM`, `MAIL_TO`.
-
-One caveat worth knowing: GitHub disables scheduled workflows in a repository
-after 60 days without commit activity and emails the owner about it. On a repo
-you never touch, cron on your own machine is the more reliable option.
-
-### cron
-
 ```cron
 0 6 1 * * /home/you/brevo-script/brevo-keepalive.sh >> /var/log/brevo-keepalive.log 2>&1
 ```
 
 The script resolves its `.env` relative to its own location, so it does not care
 about cron's working directory.
+
+A scheduled GitHub Actions workflow deliberately is not offered here: GitHub
+disables `schedule:` triggers in a repository after 60 days without commit
+activity, which is exactly the "set it and forget it" case this script exists
+for. It would go quiet before the keys it protects do.
 
 ## Security
 

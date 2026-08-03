@@ -33,10 +33,10 @@ What the script does to keep it contained:
 
 What is still on you:
 
-- Keep the key in `.env` (locally, mode `600`) or in GitHub Actions secrets —
-  never in the repository.
+- Keep the key in a `.env` file with mode `600`, owned by the user the cron job
+  runs as — never in the repository, never in the crontab line itself, where
+  every process on the box can read it.
 - Rotate the key in the Brevo dashboard if it has ever been logged, pasted, or
   shared.
-- Note that anyone with write access to the repository can read Actions secrets
-  through a workflow change. Do not add collaborators you would not hand the key
-  to directly.
+- Redirect cron output to a log only you can read. A failed run prints `curl`
+  errors, not the key, but the log still reveals your relay and addresses.
