@@ -77,8 +77,16 @@ failed.
 
 Monthly is plenty for a 90-day window and leaves room for two missed runs.
 
+Create the log directory first. Cron's shell opens the `>>` target before it
+starts the script, so if the directory is missing the job fails silently and
+the script never runs:
+
+```bash
+mkdir -p ~/.local/log
+```
+
 ```cron
-0 6 1 * * /home/you/brevo-script/brevo-keepalive.sh >> /var/log/brevo-keepalive.log 2>&1
+0 6 1 * * /home/you/brevo-script/brevo-keepalive.sh >> /home/you/.local/log/brevo-keepalive.log 2>&1
 ```
 
 The script resolves its `.env` relative to its own location, so it does not care
